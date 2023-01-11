@@ -2,7 +2,8 @@ import express from 'express'
 import router from './router'
 import morgan from 'morgan'
 import cors from 'cors'
-import { protect } from './modules/auth'
+import { protect } from './middleware'
+import { createUser, signin } from './handlers/user'
 
 
 const app = express();
@@ -25,5 +26,22 @@ app.get('/', (req, res) => {
 
 app.use('/api', protect, router)
 
+app.post('/user', createUser)
+app.post('/signin', signin)
+
+app.use((err, req, res, next) => { // error handler has four arguments and handles synchronous errors
+  if (err.type === "auth") {
+    res.status(401);
+    return res.send('Not authorised')
+  }
+  if (err.type === 'input') {
+    res.status(400)
+    return res.send('Invalid input')
+  }
+  res.status(500)
+  res.json({ message: "Oops, thats on us" })
+})
 
 export default app
+
+// async errors need to be directed to error handler using next()
